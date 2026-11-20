@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>年味浙么多 · 完整动画预览</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f7f3e8;color:#314639;font:16px system-ui,"Microsoft YaHei",sans-serif}main{max-width:1400px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}header span{font-size:14px;color:#5b6f58}button{font:inherit;border:1px solid #bcc8ae;background:#fff9ec;color:#304539;border-radius:22px;padding:8px 16px;cursor:pointer}button:hover{background:#e8edda}button:focus-visible,input:focus-visible{outline:3px solid #a6553e;outline-offset:3px}#play{background:#345340;color:white;border-color:#345340;min-width:80px}.stage{position:relative;border-radius:15px;overflow:hidden;box-shadow:0 12px 32px #31463922;background:#d7e7b2}canvas{display:block;width:100%;aspect-ratio:16/9}.heading{position:absolute;top:8%;left:6%;pointer-events:none}.heading h1{font-family:"Songti SC",SimSun,serif;font-size:clamp(21px,4.2vw,61px);margin:0;letter-spacing:.09em}.heading p{font-size:clamp(10px,1.4vw,18px);margin:.6em 0;color:#4c654d}.controls{display:flex;gap:10px;align-items:center;margin-top:15px}.controls input{flex:1;min-width:45px;accent-color:#52734e}.controls output{font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}.stage:fullscreen{display:grid;place-items:center;border-radius:0;background:#23392d}.stage:fullscreen canvas{width:min(100vw,177.777vh);max-height:100vh}.stage:fullscreen .heading{left:max(6vw,calc((100vw - 155vh)/2));top:max(8vh,calc((100vh - 47vw)/2))}@media(max-width:600px){main{padding:12px}button{font-size:13px;padding:7px 11px}}
+.stage[data-chapter="4"] .heading h1{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.stage[data-chapter="4"] .heading p{display:none}
+
+html,body{background:transparent;height:100%;overflow:hidden}
+main{height:100svh;display:flex;flex-direction:column;gap:7px;padding:clamp(7px,1.6vh,17px)}
+header,.controls{flex:none;margin:0}
+.stage-fit{flex:1;min-height:0;container-type:size;display:grid;place-items:center}
+.stage:not(:fullscreen){width:min(100cqw,177.7778cqh);margin-inline:auto}
+.controls{flex-wrap:wrap;gap:5px}
+.controls button,header button{padding:clamp(3px,.9vh,8px) clamp(7px,1.5vw,15px)}
+</style>
+<main>
+<header><span>年味浙么多队 · 完整动画预览</span><button id="full">全屏</button></header>
+<div class="stage-fit"><div class="stage" id="stage"><canvas id="scene" width="1280" height="720" aria-label="队长探路、跑步、羽毛球接力、草地写生和团队合影"></canvas><div class="heading"><h1 id="chapterTitle">先来探探路</h1><p id="chapterSubtitle">许薛懿 · 年味浙么多队</p></div></div></div>
+<div class="controls"><button id="play" disabled>播放</button><button id="again" disabled>重播</button><input id="seek" type="range" min="0" max="28" step=".01" value="0" aria-label="动画进度"><output id="clock">0.0 / 28.0 秒</output></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const canvas=$('scene'),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+const sources=["assets/b3b4840b148f15e8.webp", "assets/35a7a13d1d533aca.webp", "assets/c6131ec194c046ac.webp", "assets/89ca25ea425e4c1d.webp", "assets/05933f47b0107e03.webp", "assets/8f7b1fccd211e7b4.webp", "assets/d4334e5032352e2b.webp", "assets/cb87c382d67bfb40.webp", "assets/9637b7a84ddfef3d.webp", "assets/2dc8975546f0509a.webp", "assets/52ea99866856e221.webp", "assets/5f1335c01cb794e0.webp", "assets/f6f40c0340615cac.webp", "assets/a9cef70d75124a01.webp", "assets/3881060c808bba80.webp", "assets/dc35f1b1830dc625.webp", "assets/889058aaff3733f1.webp", "assets/cfc220a44fb7948c.webp", "assets/7ecf646a6e1605f0.webp", "assets/b959777d1f6ee213.webp", "assets/8b4746cb2a32a1b7.webp", "assets/e314a0e34c1f9533.webp", "assets/d9d97aa7062d087a.webp", "assets/aec6af16a72ba2d4.webp", "assets/4c4551f55af2c3e9.webp", "assets/bd86cfea5b941b18.webp", "assets/879e6278a0afef66.webp", "assets/276fa74852e52f61.webp", "assets/35a7a13d1d533aca.webp", "assets/d4334e5032352e2b.webp", "assets/52ea99866856e221.webp", "assets/3881060c808bba80.webp", "assets/8b4746cb2a32a1b7.webp", "assets/e314a0e34c1f9533.webp", "assets/d9d97aa7062d087a.webp", "assets/aec6af16a72ba2d4.webp", "assets/84c77bb6e9d55466.webp"];
+function load(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=src})}
+const mix=(a,b,t)=>a+(b-a)*t;
+const clamp=t=>Math.max(0,Math.min(1,t));
+const ease=t=>{t=clamp(t);return t*t*(3-2*t)};
+const timing={arrive:3,lookEnd:5.75,runners:4.25,badminton:7.35,field:9.4,group:23.25,end:28};
+const stems=[
+ [27,688,52,-14,'#6b9c54'],[46,695,72,8,'#7ea45b'],[55,696,42,16,'#538650'],
+ [139,694,42,-15,'#749e61'],[151,697,56,11,'#69924f'],[172,690,34,17,'#8caf64'],
+ [1123,697,52,-24,'#6b9c54'],[1140,698,61,-6,'#7ea45b'],[1147,700,49,16,'#538650'],
+ [1229,689,75,14,'#56854f'],[1243,693,44,29,'#749d54'],[1261,693,62,9,'#7c9d5e']
+];
+let time=0,playing=false,last=null,bg,look,walk,runnerFrames,dengFrames,catchFrame,shuttle,fieldArrival,fieldPoses,groupPoses,brushTitle,chapter=-1;
+function grass(t){
+ stems.forEach(([x,y,h,lean,color],i)=>{
+  const wind=(Math.sin(t*1.9-x*.012)+.35*Math.sin(t*3.2+i*.65))*5.2;
+  const tip=x+lean+wind;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+lean*.15+wind*.18,y-h*.48,tip,y-h);
+  ctx.quadraticCurveTo(x+lean*.42+wind*.23+3,y-h*.46,x+2.4,y);
+  ctx.closePath();ctx.fillStyle=color;ctx.globalAlpha=.68;ctx.fill();ctx.globalAlpha=1;
+ });
+}
+function actor(img,x,y,height,flip,alpha,bob,tilt){
+ ctx.save();ctx.globalAlpha=alpha*.16;ctx.fillStyle='#4a623c';ctx.beginPath();ctx.ellipse(x,y+3,41,7,0,0,Math.PI*2);ctx.fill();ctx.restore();
+ ctx.save();ctx.translate(x,y+bob);ctx.rotate(tilt);ctx.scale(flip?-1:1,1);ctx.globalAlpha=alpha;
+ const width=img.width/img.height*height;ctx.drawImage(img,-width*.5,-height,width,height);ctx.restore();
+}
+function pose(t){
+ const moving=t<timing.arrive||t>=timing.lookEnd;
+ if(moving){
+   const exit=t>=timing.lookEnd;
+   const u=exit?t-timing.lookEnd:t;
+   const x=exit?mix(635,1335,clamp(u/1.62)):mix(-90,635,clamp(u/3));
+   const phase=u*2.05;
+   const frame=walk[Math.floor(phase*4)%walk.length];
+   return {img:frame,x,y:mix(exit?571:592,exit?589:571,clamp(u/3)),height:mix(280,267,clamp(u/3)),flip:false,alpha:exit?1-ease((u-1.02)/.57):1,bob:-(Math.sin(phase*Math.PI*2)**2)*5,tilt:.014*Math.sin(phase*Math.PI)};
+ }
+ const u=t-timing.arrive, flip=u<1.06;
+ return {img:look,x:635,y:571,height:267,flip,alpha:1,bob:-Math.sin(u*3)*1.8,tilt:flip?-.025:.027};
+}
+const relay={entry:3.1,ready:4.08,hit:4.29,catch:4.96,wave:5.15,chase:6.27};
+function runPose(t,i){
+ const elapsed=t-(i?0.88:0);
+ if(elapsed<0)return null;
+ const stopAt=i?5.21:4.77, resumeAt=i?6.19:6.02;
+ const travel=Math.min(t,stopAt)+Math.max(0,t-resumeAt)-(i?0.88:0);
+ const x=-123+travel*268;
+ const parked=t>=stopAt&&t<resumeAt;
+ const phase=elapsed*(i?2.85:2.7);
+ return {
+  img:parked?(i?runnerFrames[1][0]:catchFrame):runnerFrames[i][Math.floor(phase*4)%4],
+  x,y:i?610:548,height:i?264:249,
+  alpha:1-ease((x-1248)/133),
+  bob:parked?0:-Math.abs(Math.sin(phase*Math.PI*2))*9,
+  tilt:parked?0:.016*Math.sin(phase*Math.PI*2)
+ };
+}
+function dengPose(t){
+ if(t<relay.entry)return null;
+ const entering=t<relay.ready,chasing=t>=relay.chase;
+ const x=entering?mix(-95,475,ease((t-relay.entry)/(relay.ready-relay.entry))):475+Math.max(0,t-relay.chase)*278;
+ const phase=(t-(chasing?relay.chase:relay.entry))*2.8;
+ const stepping=entering||chasing;
+ const img=stepping?dengFrames[3]:t<relay.hit?dengFrames[0]:t<relay.wave?dengFrames[1]:dengFrames[2];
+ const bob=stepping?-Math.abs(Math.sin(phase*6.283))*13:0;
+ const tilt=stepping?.04*Math.sin(phase*6.283):t>=relay.wave&&t<relay.chase?.027*Math.sin(t*13):0;
+ return {img,x,y:590,height:265,bob,tilt,alpha:1-ease((x-1248)/133)};
+}
+function drawShuttle(x,y,angle,width=37,trail=false){
+ ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+ if(trail){
+  ctx.strokeStyle='#fff8db';ctx.lineWidth=2;ctx.lineCap='round';ctx.globalAlpha=.75;
+  ctx.beginPath();ctx.moveTo(-width*.7,0);ctx.lineTo(-width*1.3,0);ctx.stroke();ctx.globalAlpha=1;
+ }
+ const h=shuttle.height/shuttle.width*width;
+ ctx.drawImage(shuttle,-width*.5,-h*.5,width,h);ctx.restore();
+}
+function runners(t){
+ const singer=runPose(t,0),athlete=runPose(t,1),deng=dengPose(t);
+ for(const p of [singer,deng,athlete]){
+  if(p&&p.alpha>0)actor(p.img,p.x,p.y,p.height,false,p.alpha,p.bob,p.tilt);
+ }
+ if(singer&&t<4.74){
+  for(let i=0;i<3;i++){
+   const progress=(t*1.68+i/3)%1;
+   ctx.save();ctx.globalAlpha=.8*Math.sin(progress*Math.PI)*singer.alpha*(1-ease((t-4.3)/.44));
+   ctx.fillStyle='#986138';ctx.font='bold 36px Georgia,serif';ctx.textAlign='center';
+   ctx.fillText(i===1?'♫':'♪',singer.x+48+progress*50,singer.y-185-progress*80);ctx.restore();
+  }
+ }
+ if(deng&&t<relay.hit){
+  const u=ease((t-relay.ready)/(relay.hit-relay.ready));
+  drawShuttle(deng.x+mix(45,85,u),deng.y-mix(123,239,u)+deng.bob,-.28,28);
+ }
+ if(t>=relay.hit&&t<relay.catch){
+  const u=(t-relay.hit)/(relay.catch-relay.hit);
+  const x=mix(560,runPose(relay.catch,0).x-62,u);
+  const y=mix(351,394,u)-111*Math.sin(u*Math.PI);
+  drawShuttle(x,y,Math.atan2(43-111*Math.PI*Math.cos(u*Math.PI),540),37,true);
+ }
+ if(t>=relay.catch&&t<6.02&&singer){
+  drawShuttle(singer.x-62,394,-.8,30);
+ }
+}
+const fieldCast=[
+ {x:510,y:595,h:239,start:.94,settle:4.12},
+ {x:267,y:603,h:233,start:4.64,settle:7.03},
+ {x:748,y:575,h:220,start:0,settle:3.76},
+ {x:1020,y:580,h:229,start:7.48,settle:9.51}
+];
+function fieldPose(t,i){
+ const {x,y,h,start,settle}=fieldCast[i];
+ if(t<start)return null;
+ const walking=t<settle;
+ const camera=i===3;
+ const progress=clamp((t-start)/(settle-start));
+ const u=progress<.76?progress:mix(.76,1,1-(1-(progress-.76)/.24)**1.35);
+ const phase=(t-start)*11;
+ const alpha=camera?1:1-ease((t-(11.35+i*.2))/.92);
+ const bob=walking?-Math.abs(Math.sin(phase))*7:Math.sin(t*2.6+i)*1.55;
+ const tilt=walking?.033*Math.sin(phase):Math.sin(t*(camera?2.6:3.7)+i)*.012;
+ return {img:walking?fieldArrival[i]:fieldPoses[i],x:mix(camera?1390:-105,x,u),y,h,alpha,bob,tilt,flip:walking&&i===0};
+}
+function field(t){
+ for(let i=0;i<fieldCast.length;i++){
+  const p=fieldPose(t,i);
+  if(p&&p.alpha>0)actor(p.img,p.x,p.y,p.h,p.flip,p.alpha,p.bob,p.tilt);
+ }
+ const flash=t-10.49;
+ if(flash>=0&&flash<.32){
+  const a=1-flash/.32;
+  ctx.save();ctx.globalAlpha=a;ctx.translate(926,412);
+  ctx.fillStyle='#fff9da';ctx.beginPath();
+  ctx.moveTo(0,-26);ctx.quadraticCurveTo(3,-3,27,0);ctx.quadraticCurveTo(3,4,0,27);
+  ctx.quadraticCurveTo(-4,4,-27,0);ctx.quadraticCurveTo(-4,-3,0,-26);ctx.fill();ctx.restore();
+  ctx.save();ctx.globalAlpha=a*.35;ctx.fillStyle='#fffdf0';ctx.fillRect(0,0,W,H);ctx.restore();
+ }
+}
+function group(t){
+ groupPoses.forEach((img,i)=>{
+  const x=98+i*155,y=554+Math.abs(i-3.5)*6;
+  const u=ease((t-i*.047)/.65);
+  actor(img,x,y+12*(1-u),184,i===3,u,Math.sin(t*2.7+i)*1.9,.014*Math.sin(t*2.8+i));
+ });
+}
+function render(){
+ if(!bg)return;
+ ctx.drawImage(bg,0,0,W,H);
+ const nextChapter=time<timing.runners?0:time<timing.badminton?1:time<timing.field?2:time<timing.group?3:4;
+ if(chapter!==nextChapter){
+  chapter=nextChapter;
+  $('stage').dataset.chapter=chapter;
+  $('chapterTitle').textContent=['先来探探路','跑步搭档','羽毛球接力','草地写生','年味浙么多'][chapter];
+  $('chapterSubtitle').textContent=['许薛懿 · 年味浙么多队','虞定睿 · 游子睿','邓鸿炜 · 虞定睿 · 游子睿','刘清怡 · 吴涵 · 陈鑫烨 · 张文慧',''][chapter];
+ }
+ if(time<7.37){
+  const p=pose(time);
+  actor(p.img,p.x,p.y,p.height,p.flip,p.alpha,p.bob,p.tilt);
+ }
+ if(time>=timing.runners&&time<timing.runners+9.7)runners(time-timing.runners);
+ if(chapter===3)field(time-timing.field);
+ if(chapter===4){
+  group(time-timing.group);
+  const reveal=ease((time-timing.group)/.74);
+  const width=590,height=width*brushTitle.height/brushTitle.width;
+  ctx.save();ctx.globalAlpha=reveal;
+  ctx.drawImage(brushTitle,(W-width)/2,64,width,height);
+  ctx.restore();
+ }
+ grass(time);
+ $('seek').value=time;$('clock').textContent=time.toFixed(1)+' / '+timing.end.toFixed(1)+' 秒';
+}
+const soundtrack=new Audio('happy.mp3');
+soundtrack.preload='none';
+window.addEventListener('pagehide',()=>soundtrack.pause());
+function play(value){soundtrack.currentTime=time;if(value){soundtrack.play().catch(()=>play(false))}else{soundtrack.pause()}playing=value;last=null;$('play').textContent=value?'暂停':time>=timing.end?'再播一次':'播放'}
+function frame(ts){
+ if(playing){
+  if(last!==null)time=Math.min(timing.end,soundtrack.currentTime);
+  last=ts;render();if(time>=timing.end)play(false);
+ }
+ requestAnimationFrame(frame);
+}
+$('play').onclick=()=>{if(time>=timing.end)time=0;play(!playing)};
+$('again').onclick=()=>{time=0;render();play(true)};
+$('seek').oninput=e=>{time=Number(e.target.value);soundtrack.currentTime=time;render();if(!playing)play(false)};
+$('full').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else $('stage').requestFullscreen()};
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&e.target===document.body&&!$('play').disabled){e.preventDefault();$('play').click()}});
+Promise.all(sources.map(load)).then(([background,scout,...steps])=>{
+ bg=background;look=scout;walk=steps.slice(0,4);runnerFrames=[steps.slice(4,8),steps.slice(8,12)];dengFrames=steps.slice(12,16);catchFrame=steps[16];shuttle=steps[17];fieldArrival=steps.slice(18,22);fieldPoses=steps.slice(22,26);groupPoses=steps.slice(26,34);brushTitle=steps[34];
+ $('play').disabled=$('again').disabled=false;render();requestAnimationFrame(frame);
+}).catch(()=>{$('clock').textContent='画面加载失败'});
+</script>
+</html>

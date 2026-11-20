@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - run: mkdir -p public && cp index.html public/index.html
+      - run: mkdir -p public && cp index.html showtime.html team.html happy.mp3 public/ && cp -r assets public/assets
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
